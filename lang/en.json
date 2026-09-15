@@ -1,0 +1,76 @@
+{
+  "FOUNDRY_INTERMISSION": {
+    "Name": "Intermission",
+    "Controls": {
+      "Button": "Intermission"
+    },
+    "Keybind": {
+      "Name": "Intermission: open / minimize / restore",
+      "Hint": "Opens the launch dialog when inactive. During an intermission, minimizes or restores the overlay."
+    },
+    "Settings": {
+      "MenuName": "Intermission",
+      "MenuLabel": "Configure intermission",
+      "MenuHint": "Image folders, timing, animation, timer, and player behavior.",
+      "Title": "Intermission Settings",
+      "CharactersFolder": "Character folder",
+      "BackgroundsFolder": "Background folder",
+      "Recursive": "Include subfolders",
+      "Browse": "Choose folder",
+      "SlideMin": "Minimum slide duration, sec.",
+      "SlideMax": "Maximum slide duration, sec.",
+      "Crossfade": "Crossfade duration, sec.",
+      "MotionIntensity": "Motion intensity",
+      "DefaultDuration": "Default intermission duration, sec.",
+      "AllowMinimize": "Allow players to minimize the overlay",
+      "TimerMode": "Timer",
+      "TimerNever": "Never show",
+      "TimerAlways": "Always show",
+      "TimerLast": "Show near the end",
+      "TimerLastSeconds": "Show during the last N seconds",
+      "TimerPosition": "Timer position",
+      "TopLeft": "Top left",
+      "TopRight": "Top right",
+      "BottomLeft": "Bottom left",
+      "BottomRight": "Bottom right",
+      "ReducedMotion": "Reduce intermission motion",
+      "ReducedMotionHint": "Local setting for this browser. Disables pan/zoom/slide while keeping image changes.",
+      "Save": "Save",
+      "Preview": "Preview 20 sec.",
+      "PreviewHint": "Shows the effect only to you. It does not pause the world or broadcast to players."
+    },
+    "Launch": {
+      "Title": "Start Intermission",
+      "Duration": "Duration",
+      "Seconds30": "30 seconds",
+      "Minute1": "1 minute",
+      "Minutes2": "2 minutes",
+      "Minutes5": "5 minutes",
+      "Minutes10": "10 minutes",
+      "Custom": "Custom",
+      "Infinite": "Until manually stopped",
+      "CustomSeconds": "Seconds",
+      "Start": "Start",
+      "Cancel": "Cancel"
+    },
+    "Overlay": {
+      "Minimize": "Minimize",
+      "Restore": "Return to intermission",
+      "Finish": "Finish",
+      "Pause": "PAUSED",
+      "Preview": "PREVIEW"
+    },
+    "Notify": {
+      "NeedGM": "Only a GM can start an intermission.",
+      "AlreadyActive": "An intermission is already active.",
+      "FoldersMissing": "Configure character and background folders first.",
+      "NoCharacters": "No suitable character images were found in the selected folder.",
+      "NoBackgrounds": "No suitable background images were found in the selected folder.",
+      "InvalidDuration": "Enter a valid intermission duration.",
+      "Preparing": "Preparing intermission…",
+      "BrowseError": "Could not browse the image folder. See the console for details.",
+      "Saved": "Intermission settings saved.",
+      "ActionError": "The intermission action failed. Details were written to the browser console (F12)."
+    }
+  }
+}

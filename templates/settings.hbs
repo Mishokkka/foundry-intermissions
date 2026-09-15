@@ -1,0 +1,65 @@
+<div class="fi-settings-body">
+  <section class="fi-settings-section">
+    <h3><i class="fa-solid fa-images"></i> Media</h3>
+
+    <div class="fi-folder-row">
+      <label for="fi-character-folder">{{localize "FOUNDRY_INTERMISSION.Settings.CharactersFolder"}}</label>
+      <div class="fi-path-controls">
+        <input id="fi-character-folder" type="text" name="characterFolder" value="{{settings.characterFolder}}" autocomplete="off">
+        <input type="hidden" name="characterSource" value="{{settings.characterSource}}">
+        <input type="hidden" name="characterBucket" value="{{settings.characterBucket}}">
+        <button type="button" data-action="pickCharacters" title="{{localize 'FOUNDRY_INTERMISSION.Settings.Browse'}}"><i class="fa-solid fa-folder-open"></i></button>
+      </div>
+      <label class="fi-checkbox"><input type="checkbox" name="charactersRecursive" {{#if settings.charactersRecursive}}checked{{/if}}> {{localize "FOUNDRY_INTERMISSION.Settings.Recursive"}}</label>
+    </div>
+
+    <div class="fi-folder-row">
+      <label for="fi-background-folder">{{localize "FOUNDRY_INTERMISSION.Settings.BackgroundsFolder"}}</label>
+      <div class="fi-path-controls">
+        <input id="fi-background-folder" type="text" name="backgroundFolder" value="{{settings.backgroundFolder}}" autocomplete="off">
+        <input type="hidden" name="backgroundSource" value="{{settings.backgroundSource}}">
+        <input type="hidden" name="backgroundBucket" value="{{settings.backgroundBucket}}">
+        <button type="button" data-action="pickBackgrounds" title="{{localize 'FOUNDRY_INTERMISSION.Settings.Browse'}}"><i class="fa-solid fa-folder-open"></i></button>
+      </div>
+      <label class="fi-checkbox"><input type="checkbox" name="backgroundsRecursive" {{#if settings.backgroundsRecursive}}checked{{/if}}> {{localize "FOUNDRY_INTERMISSION.Settings.Recursive"}}</label>
+    </div>
+  </section>
+
+  <section class="fi-settings-section fi-settings-grid">
+    <h3><i class="fa-solid fa-clock"></i> Timing</h3>
+    <label>{{localize "FOUNDRY_INTERMISSION.Settings.SlideMin"}}<input type="number" name="slideMin" min="4" max="60" step="0.5" value="{{settings.slideMin}}"></label>
+    <label>{{localize "FOUNDRY_INTERMISSION.Settings.SlideMax"}}<input type="number" name="slideMax" min="4" max="60" step="0.5" value="{{settings.slideMax}}"></label>
+    <label>{{localize "FOUNDRY_INTERMISSION.Settings.Crossfade"}}<input type="number" name="crossfade" min="0.2" max="8" step="0.1" value="{{settings.crossfade}}"></label>
+    <label>{{localize "FOUNDRY_INTERMISSION.Settings.DefaultDuration"}}<input type="number" name="defaultDuration" min="10" max="86400" step="10" value="{{settings.defaultDuration}}"></label>
+    <label>{{localize "FOUNDRY_INTERMISSION.Settings.MotionIntensity"}}<input type="number" name="motionIntensity" min="0" max="2" step="0.1" value="{{settings.motionIntensity}}"></label>
+  </section>
+
+  <section class="fi-settings-section fi-settings-grid">
+    <h3><i class="fa-solid fa-stopwatch"></i> Timer</h3>
+    <label>{{localize "FOUNDRY_INTERMISSION.Settings.TimerMode"}}
+      <select name="timerMode">
+        {{#each timerModes}}
+          <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+        {{/each}}
+      </select>
+    </label>
+    <label>{{localize "FOUNDRY_INTERMISSION.Settings.TimerLastSeconds"}}<input type="number" name="timerLastSeconds" min="5" max="3600" step="5" value="{{settings.timerLastSeconds}}"></label>
+    <label>{{localize "FOUNDRY_INTERMISSION.Settings.TimerPosition"}}
+      <select name="timerPosition">
+        {{#each timerPositions}}
+          <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+        {{/each}}
+      </select>
+    </label>
+  </section>
+
+  <section class="fi-settings-section">
+    <h3><i class="fa-solid fa-user-gear"></i> UX</h3>
+    <label class="fi-checkbox"><input type="checkbox" name="allowPlayerMinimize" {{#if settings.allowPlayerMinimize}}checked{{/if}}> {{localize "FOUNDRY_INTERMISSION.Settings.AllowMinimize"}}</label>
+  </section>
+
+  <footer class="fi-settings-footer">
+    <button type="button" data-action="preview" title="{{localize 'FOUNDRY_INTERMISSION.Settings.PreviewHint'}}"><i class="fa-solid fa-eye"></i> {{localize "FOUNDRY_INTERMISSION.Settings.Preview"}}</button>
+    <button type="submit"><i class="fa-solid fa-floppy-disk"></i> {{localize "FOUNDRY_INTERMISSION.Settings.Save"}}</button>
+  </footer>
+</div>
