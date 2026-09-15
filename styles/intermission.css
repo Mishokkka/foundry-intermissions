@@ -1,0 +1,290 @@
+/* Foundry Intermission */
+
+.foundry-intermission.intermission-settings {
+  height: min(760px, calc(100vh - 48px)) !important;
+  max-height: calc(100vh - 48px);
+}
+
+.foundry-intermission.intermission-settings .window-content {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.fi-settings-body {
+  display: grid;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px;
+  scrollbar-gutter: stable;
+}
+
+.fi-settings-section {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--color-border-light-primary, #7776);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-cool-5, #222) 18%, transparent);
+}
+
+.fi-settings-section h3 {
+  margin: 0 0 2px;
+  grid-column: 1 / -1;
+}
+
+.fi-settings-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.fi-settings-grid > label,
+.fi-folder-row {
+  display: grid;
+  gap: 5px;
+}
+
+.fi-path-controls {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+}
+
+.fi-path-controls input {
+  min-width: 0;
+}
+
+.fi-checkbox {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+}
+
+.fi-checkbox input {
+  flex: 0 0 auto;
+}
+
+.fi-settings-footer {
+  position: sticky;
+  bottom: -14px;
+  z-index: 5;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0 -14px -14px;
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--color-border-light-primary, #7776);
+  background: var(--color-cool-5, #222);
+}
+
+/* Fullscreen renderer. It intentionally sits above Foundry windows and scene UI. */
+.fi-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  pointer-events: auto;
+  user-select: none;
+  isolation: isolate;
+}
+
+.fi-stage,
+.fi-pair,
+.fi-background,
+.fi-character-plane,
+.fi-ending-mask {
+  position: absolute;
+  inset: 0;
+}
+
+.fi-pair {
+  opacity: 0;
+  will-change: opacity;
+}
+
+.fi-pair.fi-visible {
+  opacity: 1;
+}
+
+.fi-background {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: center center;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.fi-character-plane {
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.fi-character-wrap {
+  position: absolute;
+  bottom: -4vh;
+  transform: translateX(-50%);
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+
+.fi-character {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: 50% 100%;
+  transform-origin: 50% 100%;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.fi-overlay-controls {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  gap: 8px;
+  z-index: 20;
+  opacity: 0.18;
+  transition: opacity 160ms ease;
+}
+
+.fi-overlay:hover .fi-overlay-controls,
+.fi-overlay-controls:focus-within {
+  opacity: 1;
+}
+
+.fi-overlay-controls button,
+.fi-mini-pill button {
+  border: 1px solid #ffffff40;
+  background: #000000a8;
+  color: #fff;
+  box-shadow: 0 2px 14px #0008;
+  backdrop-filter: blur(3px);
+}
+
+.fi-overlay-controls button:hover,
+.fi-mini-pill button:hover {
+  background: #161616e8;
+}
+
+.fi-timer {
+  position: absolute;
+  z-index: 20;
+  min-width: 92px;
+  padding: 9px 13px;
+  border-radius: 5px;
+  background: #0008;
+  box-shadow: 0 2px 14px #0008;
+  font: 600 24px/1 system-ui, sans-serif;
+  letter-spacing: .06em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  opacity: 0;
+  transition: opacity 220ms ease;
+  pointer-events: none;
+}
+
+.fi-timer.fi-timer-visible { opacity: .92; }
+.fi-timer[data-position="top-left"] { top: 20px; left: 20px; }
+.fi-timer[data-position="top-right"] { top: 20px; right: 20px; }
+.fi-timer[data-position="bottom-left"] { bottom: 20px; left: 20px; }
+.fi-timer[data-position="bottom-right"] { bottom: 20px; right: 20px; }
+
+.fi-ending-mask {
+  z-index: 15;
+  background: #000;
+  opacity: 0;
+  transition: opacity 900ms ease;
+  pointer-events: none;
+}
+
+.fi-overlay.fi-ending .fi-ending-mask {
+  opacity: 1;
+}
+
+.fi-mini-pill {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px;
+  border-radius: 6px;
+  background: #000c;
+  color: #fff;
+  box-shadow: 0 2px 16px #0009;
+  font: 600 13px/1.2 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.fi-mini-label {
+  padding-inline: 4px;
+  white-space: nowrap;
+}
+
+.fi-preview-badge {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  z-index: 20;
+  padding: 7px 10px;
+  border-radius: 4px;
+  background: #0008;
+  font: 600 11px/1 system-ui, sans-serif;
+  letter-spacing: .12em;
+  opacity: .7;
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  .fi-settings-grid { grid-template-columns: 1fr; }
+  .fi-overlay-controls { top: 8px; right: 8px; }
+  .fi-timer { font-size: 19px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fi-pair,
+  .fi-ending-mask,
+  .fi-overlay-controls,
+  .fi-timer {
+    transition-duration: 1ms !important;
+  }
+}
+.fi-timer[data-position="top-right"] { top: 62px; }
+
+/* Launch window */
+.foundry-intermission.intermission-launch .window-content {
+  padding: 0;
+}
+
+.fi-launch-body {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.fi-launch-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(170px, 1.2fr);
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.fi-launch-row > label {
+  font-weight: 600;
+}
+
+.fi-launch-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}

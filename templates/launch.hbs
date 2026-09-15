@@ -1,0 +1,19 @@
+<div class="fi-launch-body">
+  <div class="form-group fi-launch-row">
+    <label for="fi-duration-mode">{{localize "FOUNDRY_INTERMISSION.Launch.Duration"}}</label>
+    <select id="fi-duration-mode" name="durationMode">
+      {{#each durationOptions}}
+        <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+      {{/each}}
+    </select>
+  </div>
+
+  <div class="form-group fi-launch-row">
+    <label for="fi-custom-seconds">{{localize "FOUNDRY_INTERMISSION.Launch.CustomSeconds"}}</label>
+    <input id="fi-custom-seconds" name="customSeconds" type="number" min="10" max="86400" step="10" value="{{settings.defaultDuration}}">
+  </div>
+
+  <footer class="fi-launch-footer">
+    <button type="submit"><i class="fa-solid fa-play"></i> {{localize "FOUNDRY_INTERMISSION.Launch.Start"}}</button>
+  </footer>
+</div>
