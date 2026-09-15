@@ -1,5 +1,4 @@
 const MODULE_ID = "foundry-intermission";
-const SOCKET_NAME = `module.${MODULE_ID}`;
 const SESSION_SCHEMA = 1;
 const IMAGE_EXTENSIONS = [".apng", ".avif", ".bmp", ".gif", ".jpeg", ".jpg", ".png", ".svg", ".tiff", ".webp"];
 const CHARACTER_POSITIONS = ["left", "mid-left", "center", "mid-right", "right"];
@@ -192,7 +191,7 @@ class IntermissionLaunchApp extends HandlebarsApplicationMixin(ApplicationV2) {
       durationSeconds = mode === "custom" ? customSeconds : Number(mode);
       if (!Number.isFinite(durationSeconds) || durationSeconds < 10) {
         ui.notifications.error(localize("Notify.InvalidDuration"));
-        return false;
+        throw new Error(localize("Notify.InvalidDuration"));
       }
     }
 
@@ -315,7 +314,6 @@ class IntermissionManager {
   }
 
   async ready() {
-    game.socket.on(SOCKET_NAME, data => this.#onSocket(data));
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden && this.session && !this.minimized && !this.endingStarted) this.#renderCurrent(false);
     });
@@ -434,7 +432,6 @@ class IntermissionManager {
     ]);
 
     await game.settings.set(MODULE_ID, "activeSession", session);
-    game.socket.emit(SOCKET_NAME, { type: "start", userId: game.user.id, session });
     if (session.moduleSetPause) game.togglePause(true, { broadcast: true });
     await this.#startLocal(session, { preview: false });
   }
@@ -504,7 +501,6 @@ class IntermissionManager {
 
     const updated = { ...current, stoppingAt: Date.now() + 100 };
     await game.settings.set(MODULE_ID, "activeSession", updated);
-    game.socket.emit(SOCKET_NAME, { type: "stopping", userId: game.user.id, session: updated });
     this.session = updated;
     this.#scheduleLifecycle();
   }
@@ -518,30 +514,6 @@ class IntermissionManager {
 
   openSettings() {
     if (game.user.isGM) new IntermissionSettingsApp().render({ force: true });
-  }
-
-  #onSocket(data) {
-    if (!data || typeof data !== "object") return;
-    const sender = game.users.get(data.userId);
-    if (!sender?.isGM) return;
-
-    if (data.type === "start") {
-      const session = this.#validateSession(data.session);
-      if (session) this.#startLocal(session, { preview: false });
-      return;
-    }
-
-    if (data.type === "stopping") {
-      const session = this.#validateSession(data.session);
-      if (!session || this.preview) return;
-      if (this.session?.id === session.id) {
-        this.session = session;
-        this.#scheduleLifecycle();
-      }
-      return;
-    }
-
-    if (data.type === "clear" && this.session?.id === data.sessionId && !this.preview) this.#clearLocal();
   }
 
   #validateSession(value) {
@@ -895,7 +867,6 @@ class IntermissionManager {
 
     if (current.moduleSetPause && game.paused) game.togglePause(false, { broadcast: true });
     await game.settings.set(MODULE_ID, "activeSession", {});
-    game.socket.emit(SOCKET_NAME, { type: "clear", userId: game.user.id, sessionId: current.id });
     this.#clearLocal();
   }
 
@@ -907,9 +878,8 @@ class IntermissionManager {
     if (!cycleDuration) return null;
 
     const elapsed = Math.max(0, now - Number(this.session.startedAt));
-    const cycle = this.session.infinite ? Math.floor(elapsed / cycleDuration) : 0;
-    let within = this.session.infinite ? elapsed % cycleDuration : elapsed;
-    if (!this.session.infinite && within >= cycleDuration) within %= cycleDuration;
+    const cycle = Math.floor(elapsed / cycleDuration);
+    const within = elapsed % cycleDuration;
 
     let cumulative = 0;
     for (let index = 0; index < slides.length; index += 1) {

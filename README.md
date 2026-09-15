@@ -50,4 +50,4 @@ The GM also gets an Intermission button in the Token scene controls.
 
 ## Notes
 
-The module uses Foundry's module socket namespace and public v13 APIs. It does not include or require any GTA artwork, logos, music, or other proprietary assets.
+The module uses Foundry's synchronized world settings and public v13 APIs. It does not include or require any GTA artwork, logos, music, or other proprietary assets.

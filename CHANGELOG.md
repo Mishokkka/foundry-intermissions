@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.3
+
+- Removed the custom module socket layer; `activeSession` world-setting synchronization is now the single session transport and authority.
+- Fixed invalid custom-duration submissions so the launch window remains open.
+- Fixed timeline wrapping for very long finite intermissions after the generated slide list reaches its safety cap.
+- Localized all settings section headings in English and Russian.
+
 ## 1.0.2
 
 - Replaced the launch `DialogV2.wait` workflow with a dedicated ApplicationV2 launch window.
