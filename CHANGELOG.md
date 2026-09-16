@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.4
+
+- Added a GM setting for animation pacing.
+- Three pacing modes are available for both background and character motion: the existing smooth ease-in/ease-out behavior, acceleration toward the end, and constant linear speed.
+- The selected pacing mode is stored in the synchronized session, so every client uses the same animation curve.
+
 ## 1.0.3
 
 - Removed the custom module socket layer; `activeSession` world-setting synchronization is now the single session transport and authority.

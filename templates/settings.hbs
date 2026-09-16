@@ -32,6 +32,13 @@
     <label>{{localize "FOUNDRY_INTERMISSION.Settings.Crossfade"}}<input type="number" name="crossfade" min="0.2" max="8" step="0.1" value="{{settings.crossfade}}"></label>
     <label>{{localize "FOUNDRY_INTERMISSION.Settings.DefaultDuration"}}<input type="number" name="defaultDuration" min="10" max="86400" step="10" value="{{settings.defaultDuration}}"></label>
     <label>{{localize "FOUNDRY_INTERMISSION.Settings.MotionIntensity"}}<input type="number" name="motionIntensity" min="0" max="2" step="0.1" value="{{settings.motionIntensity}}"></label>
+    <label>{{localize "FOUNDRY_INTERMISSION.Settings.MotionTiming"}}
+      <select name="motionTiming">
+        {{#each motionTimings}}
+          <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+        {{/each}}
+      </select>
+    </label>
   </section>
 
   <section class="fi-settings-section fi-settings-grid">

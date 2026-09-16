@@ -4,6 +4,11 @@ const IMAGE_EXTENSIONS = [".apng", ".avif", ".bmp", ".gif", ".jpeg", ".jpg", ".p
 const CHARACTER_POSITIONS = ["left", "mid-left", "center", "mid-right", "right"];
 const CHARACTER_MOTIONS = ["slide-left", "slide-right", "zoom-in", "zoom-out", "still"];
 const BACKGROUND_MOTIONS = ["pan-left", "pan-right", "pan-up", "pan-down", "zoom-in", "zoom-out", "diag-a", "diag-b"];
+const MOTION_EASINGS = {
+  smooth: "ease-in-out",
+  accelerate: "ease-in",
+  linear: "linear"
+};
 const POSITION_RATIOS = {
   left: 0.22,
   "mid-left": 0.36,
@@ -25,6 +30,7 @@ const WORLD_SETTING_KEYS = [
   "slideMax",
   "crossfade",
   "motionIntensity",
+  "motionTiming",
   "defaultDuration",
   "allowPlayerMinimize",
   "timerMode",
@@ -95,6 +101,7 @@ function normalizeSettings(raw) {
     slideMax: Number(raw.slideMax ?? 14),
     crossfade: Number(raw.crossfade ?? 2),
     motionIntensity: Number(raw.motionIntensity ?? 1),
+    motionTiming: Object.hasOwn(MOTION_EASINGS, raw.motionTiming) ? raw.motionTiming : "smooth",
     defaultDuration: Number(raw.defaultDuration ?? 300),
     allowPlayerMinimize: Boolean(raw.allowPlayerMinimize),
     timerMode: ["never", "always", "last"].includes(raw.timerMode) ? raw.timerMode : "last",
@@ -132,6 +139,7 @@ function settingsFromForm(form) {
     slideMax: value("slideMax"),
     crossfade: value("crossfade"),
     motionIntensity: value("motionIntensity"),
+    motionTiming: value("motionTiming"),
     defaultDuration: value("defaultDuration"),
     allowPlayerMinimize: form.elements.allowPlayerMinimize?.checked ?? false,
     timerMode: value("timerMode"),
@@ -233,6 +241,11 @@ class IntermissionSettingsApp extends HandlebarsApplicationMixin(ApplicationV2) 
     return {
       ...context,
       settings,
+      motionTimings: [
+        { value: "smooth", label: localize("Settings.MotionTimingSmooth"), selected: settings.motionTiming === "smooth" },
+        { value: "accelerate", label: localize("Settings.MotionTimingAccelerate"), selected: settings.motionTiming === "accelerate" },
+        { value: "linear", label: localize("Settings.MotionTimingLinear"), selected: settings.motionTiming === "linear" }
+      ],
       timerModes: [
         { value: "never", label: localize("Settings.TimerNever"), selected: settings.timerMode === "never" },
         { value: "always", label: localize("Settings.TimerAlways"), selected: settings.timerMode === "always" },
@@ -418,6 +431,7 @@ class IntermissionManager {
       slides,
       crossfadeMs: Math.round(normalized.crossfade * 1000),
       motionIntensity: normalized.motionIntensity,
+      motionTiming: normalized.motionTiming,
       allowPlayerMinimize: normalized.allowPlayerMinimize,
       timerMode: normalized.timerMode,
       timerLastSeconds: normalized.timerLastSeconds,
@@ -477,6 +491,7 @@ class IntermissionManager {
       slides: this.#buildSlides(assets, normalized, durationMs),
       crossfadeMs: Math.round(normalized.crossfade * 1000),
       motionIntensity: normalized.motionIntensity,
+      motionTiming: normalized.motionTiming,
       allowPlayerMinimize: true,
       timerMode: normalized.timerMode,
       timerLastSeconds: normalized.timerLastSeconds,
@@ -998,7 +1013,8 @@ class IntermissionManager {
     const backgroundKeyframes = this.#backgroundKeyframes(info.slide.backgroundMotion, viewportWidth, viewportHeight, intensity);
     const characterKeyframes = this.#characterKeyframes(info.slide.characterMotion, slidePx, intensity);
     const duration = Math.max(100, Number(info.slide.durationMs) || 10_000);
-    const timing = { duration, easing: "ease-in-out", fill: "both" };
+    const easing = MOTION_EASINGS[this.session.motionTiming] ?? MOTION_EASINGS.smooth;
+    const timing = { duration, easing, fill: "both" };
     const bgAnimation = background.animate(backgroundKeyframes, timing);
     const charAnimation = character.animate(characterKeyframes, timing);
     bgAnimation.currentTime = clamp(info.elapsedInSlide, 0, duration);
@@ -1146,6 +1162,7 @@ function registerSettings() {
   worldSetting("slideMax", { type: Number, default: 14 });
   worldSetting("crossfade", { type: Number, default: 2 });
   worldSetting("motionIntensity", { type: Number, default: 1 });
+  worldSetting("motionTiming", { type: String, default: "smooth" });
   worldSetting("defaultDuration", { type: Number, default: 300 });
   worldSetting("allowPlayerMinimize", { type: Boolean, default: true });
   worldSetting("timerMode", { type: String, default: "last" });

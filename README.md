@@ -13,6 +13,7 @@ Target environment: Foundry VTT 13.351. Tested architecture is compatible with F
 - Randomized background + transparent PNG/WebP character combinations.
 - Shuffle-bag selection to avoid ugly immediate repetition.
 - Slow background pan/zoom and character slide/zoom presets.
+- Selectable motion pacing: smooth start/stop, accelerating toward the transition, or constant linear speed.
 - Safe background overscan and character boundary clamping.
 - Crossfaded double-buffered visual layers.
 - Lazy image decoding: current and next slides only.
