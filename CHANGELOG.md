@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.8
+
+- Fixed early manual Finish before `startedAt`: pending intermission audio is now treated as not yet playing, so the normal short stop path cancels delayed playback instead of allowing the sound to start during its own fade-out window.
+
 ## 1.0.7
 
 - Added a per-user intermission sound volume setting (0–100%) and live volume sliders on both the full overlay and minimized pill.
