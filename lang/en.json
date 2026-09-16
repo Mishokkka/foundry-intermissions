@@ -45,7 +45,9 @@
       "ReducedMotionHint": "Local setting for this browser. Disables pan/zoom/slide while keeping image changes.",
       "Save": "Save",
       "Preview": "Preview 20 sec.",
-      "PreviewHint": "Shows the effect only to you. It does not pause the world or broadcast to players."
+      "PreviewHint": "Shows the effect only to you. It does not pause the world or broadcast to players.",
+      "AudioVolume": "Intermission sound volume",
+      "AudioVolumeHint": "Personal volume for sounds played by the Intermission module. This setting only affects your user."
     },
     "Launch": {
       "Title": "Start Intermission",
@@ -59,14 +61,23 @@
       "Infinite": "Until manually stopped",
       "CustomSeconds": "Seconds",
       "Start": "Start",
-      "Cancel": "Cancel"
+      "Cancel": "Cancel",
+      "AudioDuration": "Match sound duration",
+      "AudioSection": "Intermission sound",
+      "AudioFile": "Audio file",
+      "AudioBrowse": "Choose sound",
+      "AudioLoop": "Repeat sound until the intermission ends",
+      "AudioFadeOut": "Fade out at end, sec.",
+      "AudioHint": "Optional. This sound plays over the current music and does not modify Foundry playlists. It is always stopped when the intermission ends.",
+      "AudioHistory": "Recent sounds"
     },
     "Overlay": {
       "Minimize": "Minimize",
       "Restore": "Return to intermission",
       "Finish": "Finish",
       "Pause": "PAUSED",
-      "Preview": "PREVIEW"
+      "Preview": "PREVIEW",
+      "AudioVolume": "Intermission sound volume"
     },
     "Notify": {
       "NeedGM": "Only a GM can start an intermission.",
@@ -78,7 +89,10 @@
       "Preparing": "Preparing intermission…",
       "BrowseError": "Could not browse the image folder. See the console for details.",
       "Saved": "Intermission settings saved.",
-      "ActionError": "The intermission action failed. Details were written to the browser console (F12)."
+      "ActionError": "The intermission action failed. Details were written to the browser console (F12).",
+      "PreparingAudio": "Preparing intermission sound…",
+      "AudioLoadError": "The selected sound could not be loaded. Check the file or path.",
+      "AudioRequired": "Choose an audio file before using “Match sound duration”."
     }
   }
 }

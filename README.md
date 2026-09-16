@@ -13,7 +13,7 @@ Target environment: Foundry VTT 13.351. Tested architecture is compatible with F
 - Randomized background + transparent PNG/WebP character combinations.
 - Shuffle-bag selection to avoid ugly immediate repetition.
 - Slow background pan/zoom and character slide/zoom presets.
-- Selectable motion pacing: smooth start/stop, accelerating toward the transition, or constant linear speed.
+- Selectable motion pacing: smooth start/stop, accelerating toward the transition, or constant linear speed. Accelerating and linear motion continues through the outgoing crossfade so the old image never visibly freezes before disappearing.
 - Safe background overscan and character boundary clamping.
 - Crossfaded double-buffered visual layers.
 - Lazy image decoding: current and next slides only.
@@ -23,7 +23,8 @@ Target environment: Foundry VTT 13.351. Tested architecture is compatible with F
 - F5/reconnect recovery through a hidden world setting containing the active session state.
 - GM-only local preview that does not pause or broadcast.
 - Local Reduced Motion option.
-- Playlist/audio state is never modified.
+- Optional launch sound: choose an audio file per intermission, optionally loop it, use its duration as the intermission duration, and fade it out toward the end.
+- Existing Foundry playlists/music are never modified; the intermission sound is an additional temporary Sound and is always stopped when the intermission ends.
 
 ## Installation
 
@@ -49,6 +50,22 @@ The default keybinding is `Ctrl+Shift+P`. It can be changed in Foundry's **Confi
 
 The GM also gets an Intermission button in the Token scene controls.
 
+## Intermission sound
+
+The launch dialog can optionally attach one audio file to that intermission. The GM can:
+
+- keep a normal/custom intermission duration and play the sound once;
+- loop the sound until the intermission ends;
+- choose **Match sound duration** so the loaded audio duration becomes the intermission duration;
+- choose a fade-out duration. The fade begins that many seconds before the effective end, even if the track is currently mid-playback, and the sound is stopped at the end.
+
+The audio configuration is stored in the synchronized active-session state. Each client plays the sound locally using the same session timestamps, so reconnecting during an intermission resumes from the corresponding offset. Minimizing the overlay does not stop the sound. Existing playlists continue unchanged.
+
 ## Notes
 
 The module uses Foundry's synchronized world settings and public v13 APIs. It does not include or require any GTA artwork, logos, music, or other proprietary assets.
+
+
+## Audio comfort and history
+
+Intermission audio has a per-user volume control. Each participant can set their own level in Foundry settings or adjust it live from the intermission overlay/minimized pill; changing it does not affect anyone else. The launch window also keeps the 10 most recently used intermission sounds as a world-level GM history for quick reuse.
