@@ -869,7 +869,7 @@ class IntermissionManager {
   #audioExpectedPlaying(session, now = Date.now()) {
     const audio = session?.audio;
     if (!audio?.src) return false;
-    if (now < Number(session.startedAt)) return true;
+    if (now < Number(session.startedAt)) return false;
     if (audio.loop) return true;
     const durationMs = Math.max(1, Number(audio.durationMs) || 1);
     return now - Number(session.startedAt) < durationMs;

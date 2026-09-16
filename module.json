@@ -2,7 +2,7 @@
   "id": "foundry-intermission",
   "title": "Foundry Intermission",
   "description": "Synchronized full-screen intermission/loading-screen pauses with randomized backgrounds and character art.",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "authors": [
     {
       "name": "Mishokkka"
