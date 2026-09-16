@@ -1,5 +1,7 @@
 const MODULE_ID = "foundry-intermission";
 const SESSION_SCHEMA = 1;
+const AUDIO_HISTORY_LIMIT = 10;
+const DEFAULT_AUDIO_VOLUME = 0.7;
 const IMAGE_EXTENSIONS = [".apng", ".avif", ".bmp", ".gif", ".jpeg", ".jpg", ".png", ".svg", ".tiff", ".webp"];
 const CHARACTER_POSITIONS = ["left", "mid-left", "center", "mid-right", "right"];
 const CHARACTER_MOTIONS = ["slide-left", "slide-right", "zoom-in", "zoom-out", "still"];
@@ -79,6 +81,38 @@ class ShuffleBag {
     this.last = value;
     return value;
   }
+}
+
+
+function audioHistoryLabel(src) {
+  const bare = String(src ?? "").split(/[?#]/, 1)[0];
+  const name = bare.split(/[\\/]/).pop() || bare;
+  try { return decodeURIComponent(name); } catch (_) { return name; }
+}
+
+function getAudioHistory() {
+  const raw = game.settings.get(MODULE_ID, "audioHistory");
+  const items = Array.isArray(raw) ? raw : Array.isArray(raw?.items) ? raw.items : [];
+  return items
+    .filter(entry => entry && typeof entry.src === "string" && entry.src.trim())
+    .map(entry => ({
+      src: entry.src.trim(),
+      label: String(entry.label || audioHistoryLabel(entry.src)),
+      usedAt: Number(entry.usedAt) || 0
+    }))
+    .slice(0, AUDIO_HISTORY_LIMIT);
+}
+
+async function rememberAudioSource(src) {
+  if (!game.user?.isGM) return;
+  const clean = String(src ?? "").trim();
+  if (!clean) return;
+  const existing = getAudioHistory();
+  const next = [
+    { src: clean, label: audioHistoryLabel(clean), usedAt: Date.now() },
+    ...existing.filter(entry => entry.src !== clean)
+  ].slice(0, AUDIO_HISTORY_LIMIT);
+  await game.settings.set(MODULE_ID, "audioHistory", { items: next });
 }
 
 function getSettingsSnapshot() {
@@ -164,6 +198,10 @@ class IntermissionLaunchApp extends HandlebarsApplicationMixin(ApplicationV2) {
     form: {
       closeOnSubmit: true,
       handler: this.#onSubmit
+    },
+    actions: {
+      pickSound: this.#pickSound,
+      useRecentSound: this.#useRecentSound
     }
   };
 
@@ -185,17 +223,49 @@ class IntermissionLaunchApp extends HandlebarsApplicationMixin(ApplicationV2) {
       { value: "300", label: localize("Launch.Minutes5") },
       { value: "600", label: localize("Launch.Minutes10") },
       { value: "custom", label: localize("Launch.Custom") },
+      { value: "audio", label: localize("Launch.AudioDuration") },
       { value: "infinite", label: localize("Launch.Infinite") }
     ].map(option => ({ ...option, selected: option.value === selectedPreset }));
-    return { ...context, settings, durationOptions };
+    const audioHistory = getAudioHistory();
+    return { ...context, settings, durationOptions, audioHistory, hasAudioHistory: audioHistory.length > 0 };
   }
 
   static async #onSubmit(event, form) {
     const mode = String(form.elements.durationMode?.value ?? "custom");
     const customSeconds = Number(form.elements.customSeconds?.value);
+    const audioSrc = String(form.elements.audioSrc?.value ?? "").trim();
+    const audioLoop = Boolean(form.elements.audioLoop?.checked);
+    const requestedFadeSeconds = Number(form.elements.audioFadeOut?.value ?? 0);
     let durationSeconds = null;
+    let audio = null;
 
-    if (mode !== "infinite") {
+    if (audioSrc) {
+      ui.notifications.info(localize("Notify.PreparingAudio"));
+      try {
+        const probe = new foundry.audio.Sound(audioSrc, { context: game.audio.music });
+        await probe.load();
+        const audioDurationSeconds = Number(probe.duration);
+        if (!Number.isFinite(audioDurationSeconds) || audioDurationSeconds <= 0) throw new Error("Invalid audio duration");
+        audio = {
+          src: audioSrc,
+          loop: audioLoop,
+          durationMs: Math.round(audioDurationSeconds * 1000),
+          fadeOutMs: Math.round(clamp(Number.isFinite(requestedFadeSeconds) ? requestedFadeSeconds : 0, 0, 3600) * 1000)
+        };
+      } catch (error) {
+        console.error(`${MODULE_ID} | Failed to load intermission audio`, error);
+        ui.notifications.error(localize("Notify.AudioLoadError"));
+        throw error;
+      }
+    }
+
+    if (mode === "audio") {
+      if (!audio) {
+        ui.notifications.error(localize("Notify.AudioRequired"));
+        throw new Error(localize("Notify.AudioRequired"));
+      }
+      durationSeconds = audio.durationMs / 1000;
+    } else if (mode !== "infinite") {
       durationSeconds = mode === "custom" ? customSeconds : Number(mode);
       if (!Number.isFinite(durationSeconds) || durationSeconds < 10) {
         ui.notifications.error(localize("Notify.InvalidDuration"));
@@ -203,8 +273,21 @@ class IntermissionLaunchApp extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
 
-    await IntermissionManager.instance.startSession(durationSeconds, getSettingsSnapshot());
+    await IntermissionManager.instance.startSession(durationSeconds, getSettingsSnapshot(), audio);
     return true;
+  }
+
+  static #pickSound() {
+    openLaunchSoundPicker(this);
+  }
+
+  static #useRecentSound(event, target) {
+    const button = target?.closest?.("[data-src]") ?? event?.currentTarget?.closest?.("[data-src]") ?? event?.target?.closest?.("[data-src]");
+    const src = String(button?.dataset?.src ?? "").trim();
+    const input = this.form?.elements.audioSrc;
+    if (!input || !src) return;
+    input.value = src;
+    input.focus();
   }
 }
 
@@ -305,6 +388,18 @@ function openSettingsFolderPicker(app, kind) {
   picker.render({ force: true });
 }
 
+function openLaunchSoundPicker(app) {
+  const input = app.form?.elements.audioSrc;
+  if (!input) return;
+  const picker = new foundry.applications.apps.FilePicker({
+    type: "audio",
+    current: input.value,
+    allowUpload: false,
+    callback: path => { input.value = path; }
+  });
+  picker.render({ force: true });
+}
+
 class IntermissionManager {
   static instance = new IntermissionManager();
 
@@ -324,6 +419,10 @@ class IntermissionManager {
     this.finalizeScheduledFor = null;
     this.renderGeneration = 0;
     this.imagePromises = new Map();
+    this.audioSound = null;
+    this.audioFadeTimer = null;
+    this.audioStopTimer = null;
+    this.audioGeneration = 0;
   }
 
   async ready() {
@@ -347,6 +446,7 @@ class IntermissionManager {
     if (this.session?.id === session.id && !this.preview) {
       this.session = session;
       this.#scheduleLifecycle();
+      this.#scheduleAudioLifecycle();
       this.#updateClockDisplay();
       return;
     }
@@ -387,7 +487,7 @@ class IntermissionManager {
     }
   }
 
-  async startSession(durationSeconds, settings = getSettingsSnapshot()) {
+  async startSession(durationSeconds, settings = getSettingsSnapshot(), audio = null) {
     if (!game.user.isGM) return ui.notifications.warn(localize("Notify.NeedGM"));
     if (this.#validateSession(game.settings.get(MODULE_ID, "activeSession"))) {
       return ui.notifications.warn(localize("Notify.AlreadyActive"));
@@ -414,7 +514,7 @@ class IntermissionManager {
     if (!assets.backgrounds.length) return ui.notifications.error(localize("Notify.NoBackgrounds"));
 
     const durationMs = durationSeconds == null ? null : Math.round(durationSeconds * 1000);
-    const startedAt = Date.now() + 700;
+    const startedAt = Date.now() + (audio?.src ? 1200 : 700);
     const slides = this.#buildSlides(assets, normalized, durationMs);
     const session = {
       schema: SESSION_SCHEMA,
@@ -432,6 +532,12 @@ class IntermissionManager {
       crossfadeMs: Math.round(normalized.crossfade * 1000),
       motionIntensity: normalized.motionIntensity,
       motionTiming: normalized.motionTiming,
+      audio: audio?.src ? {
+        src: String(audio.src),
+        loop: Boolean(audio.loop),
+        durationMs: Math.max(1, Number(audio.durationMs) || 1),
+        fadeOutMs: Math.max(0, Number(audio.fadeOutMs) || 0)
+      } : null,
       allowPlayerMinimize: normalized.allowPlayerMinimize,
       timerMode: normalized.timerMode,
       timerLastSeconds: normalized.timerLastSeconds,
@@ -445,7 +551,12 @@ class IntermissionManager {
       this.#preloadImage(session.characters[first.character])
     ]);
 
+    if (session.audio?.src && typeof game.audio?.preload === "function") {
+      game.audio.preload(session.audio.src).catch(error => console.warn(`${MODULE_ID} | Remote audio preload failed`, error));
+    }
+
     await game.settings.set(MODULE_ID, "activeSession", session);
+    if (session.audio?.src) rememberAudioSource(session.audio.src).catch(error => console.warn(`${MODULE_ID} | Could not update audio history`, error));
     if (session.moduleSetPause) game.togglePause(true, { broadcast: true });
     await this.#startLocal(session, { preview: false });
   }
@@ -514,10 +625,16 @@ class IntermissionManager {
     if (!current || current.id !== this.session.id) return;
     if (current.stoppingAt) return;
 
-    const updated = { ...current, stoppingAt: Date.now() + 100 };
+    const now = Date.now();
+    const audioFadeMs = this.#audioExpectedPlaying(current, now) ? Math.max(0, Number(current.audio?.fadeOutMs) || 0) : 0;
+    let stoppingAt = now + Math.max(100, audioFadeMs);
+    const scheduledEnd = Number(current.endsAt) || null;
+    if (scheduledEnd) stoppingAt = Math.min(stoppingAt, scheduledEnd);
+    const updated = { ...current, stoppingAt };
     await game.settings.set(MODULE_ID, "activeSession", updated);
     this.session = updated;
     this.#scheduleLifecycle();
+    this.#scheduleAudioLifecycle();
   }
 
   toggleMinimize() {
@@ -622,7 +739,189 @@ class IntermissionManager {
     this.#buildOverlay();
     this.#startClock();
     this.#scheduleLifecycle();
+    if (!preview) this.#startSessionAudio().catch(error => console.warn(`${MODULE_ID} | Intermission audio could not start`, error));
     await this.#renderCurrent(false);
+  }
+
+  async #startSessionAudio() {
+    const session = this.session;
+    const audio = session?.audio;
+    if (!session || this.preview || !audio?.src) return;
+
+    this.#stopSessionAudio();
+    const generation = ++this.audioGeneration;
+    const sound = new foundry.audio.Sound(audio.src, { context: game.audio.music });
+    this.audioSound = sound;
+
+    try {
+      await sound.load();
+      if (generation !== this.audioGeneration || this.session?.id !== session.id) return;
+
+      const now = Date.now();
+      const end = this.#effectiveEnd();
+      if (end != null && now >= end) {
+        this.#stopSessionAudio();
+        return;
+      }
+
+      const durationSeconds = Math.max(0.001, Number(sound.duration) || (Number(audio.durationMs) || 1) / 1000);
+      const elapsedSeconds = Math.max(0, now - Number(session.startedAt)) / 1000;
+      if (!audio.loop && elapsedSeconds >= durationSeconds) {
+        this.#stopSessionAudio();
+        return;
+      }
+
+      const offset = now < Number(session.startedAt)
+        ? 0
+        : audio.loop
+          ? elapsedSeconds % durationSeconds
+          : elapsedSeconds;
+      const delay = Math.max(0, Number(session.startedAt) - now) / 1000;
+      await sound.play({ loop: Boolean(audio.loop), volume: this.#getLocalAudioVolume(), offset, delay });
+      if (generation !== this.audioGeneration || this.session?.id !== session.id) {
+        this.#stopSessionAudio();
+        return;
+      }
+      this.applyLocalAudioVolume(this.#getLocalAudioVolume());
+      this.#scheduleAudioLifecycle();
+    } catch (error) {
+      if (generation === this.audioGeneration) this.#stopSessionAudio();
+      throw error;
+    }
+  }
+
+  #getLocalAudioVolume() {
+    const raw = Number(game.settings.get(MODULE_ID, "audioVolume"));
+    return Number.isFinite(raw) ? clamp(raw, 0, 1) : DEFAULT_AUDIO_VOLUME;
+  }
+
+  applyLocalAudioVolume(value) {
+    const volume = Number.isFinite(Number(value)) ? clamp(Number(value), 0, 1) : DEFAULT_AUDIO_VOLUME;
+    this.#syncAudioVolumeControls(volume);
+
+    const sound = this.audioSound;
+    const audio = this.session?.audio;
+    if (!sound?.playing || !audio?.src) return;
+
+    const end = this.#effectiveEnd();
+    const now = Date.now();
+    const fadeOutMs = Math.max(0, Number(audio.fadeOutMs) || 0);
+    const fadeAt = end == null ? null : end - fadeOutMs;
+
+    try {
+      const at = sound.context.currentTime;
+      sound.gain.cancelScheduledValues(at);
+      sound.gain.setValueAtTime(volume, at);
+      if (end != null && fadeOutMs > 0 && fadeAt != null && now >= fadeAt && now < end) {
+        const remainingSeconds = Math.max(0.001, end - now) / 1000;
+        sound.gain.linearRampToValueAtTime(0, at + remainingSeconds);
+      }
+    } catch (_) { /* no-op */ }
+  }
+
+  #syncAudioVolumeControls(volume = this.#getLocalAudioVolume()) {
+    const percent = Math.round(clamp(volume, 0, 1) * 100);
+    for (const input of document.querySelectorAll(`.${MODULE_ID} .fi-audio-volume-range, .fi-overlay .fi-audio-volume-range, .fi-mini-pill .fi-audio-volume-range`)) {
+      if (document.activeElement !== input) input.value = String(percent);
+    }
+    for (const output of document.querySelectorAll(`.fi-overlay .fi-audio-volume-value, .fi-mini-pill .fi-audio-volume-value`)) {
+      output.textContent = `${percent}%`;
+    }
+  }
+
+  #createAudioVolumeControl(compact = false) {
+    if (!this.session?.audio?.src || this.preview) return null;
+    const wrap = document.createElement("label");
+    wrap.className = `fi-audio-volume${compact ? " fi-audio-volume-compact" : ""}`;
+    wrap.title = localize("Overlay.AudioVolume");
+
+    const icon = document.createElement("i");
+    icon.className = "fa-solid fa-volume-high";
+    const input = document.createElement("input");
+    input.type = "range";
+    input.className = "fi-audio-volume-range";
+    input.min = "0";
+    input.max = "100";
+    input.step = "5";
+    input.value = String(Math.round(this.#getLocalAudioVolume() * 100));
+    input.setAttribute("aria-label", localize("Overlay.AudioVolume"));
+    const value = document.createElement("span");
+    value.className = "fi-audio-volume-value";
+    value.textContent = `${input.value}%`;
+
+    input.addEventListener("input", event => {
+      event.stopPropagation();
+      const volume = clamp(Number(input.value) / 100, 0, 1);
+      value.textContent = `${Math.round(volume * 100)}%`;
+      this.applyLocalAudioVolume(volume);
+    });
+    input.addEventListener("change", event => {
+      event.stopPropagation();
+      const volume = clamp(Number(input.value) / 100, 0, 1);
+      game.settings.set(MODULE_ID, "audioVolume", volume).catch(error => console.warn(`${MODULE_ID} | Could not save local audio volume`, error));
+    });
+    input.addEventListener("click", event => event.stopPropagation());
+
+    wrap.append(icon, input, value);
+    return wrap;
+  }
+
+  #audioExpectedPlaying(session, now = Date.now()) {
+    const audio = session?.audio;
+    if (!audio?.src) return false;
+    if (now < Number(session.startedAt)) return true;
+    if (audio.loop) return true;
+    const durationMs = Math.max(1, Number(audio.durationMs) || 1);
+    return now - Number(session.startedAt) < durationMs;
+  }
+
+  #scheduleAudioLifecycle() {
+    clearTimeout(this.audioFadeTimer);
+    clearTimeout(this.audioStopTimer);
+    this.audioFadeTimer = null;
+    this.audioStopTimer = null;
+
+    const sound = this.audioSound;
+    const audio = this.session?.audio;
+    const end = this.#effectiveEnd();
+    if (!sound || !audio?.src || end == null) return;
+
+    const now = Date.now();
+    if (now >= end) {
+      this.#stopSessionAudio();
+      return;
+    }
+
+    const fadeOutMs = clamp(Number(audio.fadeOutMs) || 0, 0, Math.max(0, end - now));
+    if (fadeOutMs > 0) {
+      const fadeAt = end - fadeOutMs;
+      const beginFade = () => {
+        const current = this.audioSound;
+        if (!current || !this.session?.audio?.src) return;
+        const remaining = Math.max(0, end - Date.now());
+        if (remaining <= 0) return;
+        current.fade(0, { duration: remaining, type: "linear" }).catch(error => console.warn(`${MODULE_ID} | Audio fade-out failed`, error));
+      };
+      if (now >= fadeAt) beginFade();
+      else this.audioFadeTimer = setTimeout(beginFade, Math.max(0, fadeAt - now));
+    }
+
+    this.audioStopTimer = setTimeout(() => this.#stopSessionAudio(), Math.max(0, end - now));
+  }
+
+  #stopSessionAudio() {
+    clearTimeout(this.audioFadeTimer);
+    clearTimeout(this.audioStopTimer);
+    this.audioFadeTimer = null;
+    this.audioStopTimer = null;
+    this.audioGeneration += 1;
+    const sound = this.audioSound;
+    this.audioSound = null;
+    if (!sound) return;
+    try {
+      const result = sound.stop();
+      if (result && typeof result.catch === "function") result.catch(() => {});
+    } catch (_) { /* no-op */ }
   }
 
   #buildOverlay() {
@@ -675,6 +974,8 @@ class IntermissionManager {
 
     const controls = document.createElement("div");
     controls.className = "fi-overlay-controls";
+    const audioVolume = this.#createAudioVolumeControl(false);
+    if (audioVolume) controls.append(audioVolume);
     const canMinimize = this.preview || game.user.isGM || this.session.allowPlayerMinimize;
     if (canMinimize) {
       const minimize = document.createElement("button");
@@ -753,6 +1054,9 @@ class IntermissionManager {
     label.className = "fi-mini-label";
     pill.append(label);
     pill._fiLabel = label;
+
+    const audioVolume = this.#createAudioVolumeControl(true);
+    if (audioVolume) pill.append(audioVolume);
 
     const restore = document.createElement("button");
     restore.type = "button";
@@ -1012,13 +1316,22 @@ class IntermissionManager {
     character.style.transform = "";
     const backgroundKeyframes = this.#backgroundKeyframes(info.slide.backgroundMotion, viewportWidth, viewportHeight, intensity);
     const characterKeyframes = this.#characterKeyframes(info.slide.characterMotion, slidePx, intensity);
-    const duration = Math.max(100, Number(info.slide.durationMs) || 10_000);
+    const slideDuration = Math.max(100, Number(info.slide.durationMs) || 10_000);
     const easing = MOTION_EASINGS[this.session.motionTiming] ?? MOTION_EASINGS.smooth;
-    const timing = { duration, easing, fill: "both" };
+    const crossfadeMs = clamp(
+      Number(this.session.crossfadeMs) || 2000,
+      100,
+      Math.max(100, slideDuration * 0.45)
+    );
+    // Accelerating and linear motion should keep moving while the outgoing pair fades out.
+    // Smooth mode intentionally retains its existing ease-to-a-stop behavior at the slide boundary.
+    const continuesThroughCrossfade = this.session.motionTiming === "accelerate" || this.session.motionTiming === "linear";
+    const motionDuration = slideDuration + (continuesThroughCrossfade ? crossfadeMs : 0);
+    const timing = { duration: motionDuration, easing, fill: "both" };
     const bgAnimation = background.animate(backgroundKeyframes, timing);
     const charAnimation = character.animate(characterKeyframes, timing);
-    bgAnimation.currentTime = clamp(info.elapsedInSlide, 0, duration);
-    charAnimation.currentTime = clamp(info.elapsedInSlide, 0, duration);
+    bgAnimation.currentTime = clamp(info.elapsedInSlide, 0, motionDuration);
+    charAnimation.currentTime = clamp(info.elapsedInSlide, 0, motionDuration);
     animations.push(bgAnimation, charAnimation);
     return true;
   }
@@ -1113,6 +1426,7 @@ class IntermissionManager {
   }
 
   #clearLocal() {
+    this.#stopSessionAudio();
     clearTimeout(this.slideTimer);
     clearInterval(this.clockInterval);
     clearTimeout(this.finalizeTimer);
@@ -1168,12 +1482,24 @@ function registerSettings() {
   worldSetting("timerMode", { type: String, default: "last" });
   worldSetting("timerLastSeconds", { type: Number, default: 30 });
   worldSetting("timerPosition", { type: String, default: "bottom-right" });
+  worldSetting("audioHistory", { type: Object, default: { items: [] } });
   worldSetting("activeSession", {
     type: Object,
     default: {},
     onChange: value => {
       if (game.ready) IntermissionManager.instance.syncFromWorld(value);
     }
+  });
+
+  game.settings.register(MODULE_ID, "audioVolume", {
+    scope: "user",
+    config: true,
+    name: "FOUNDRY_INTERMISSION.Settings.AudioVolume",
+    hint: "FOUNDRY_INTERMISSION.Settings.AudioVolumeHint",
+    type: Number,
+    range: { min: 0, max: 1, step: 0.05 },
+    default: DEFAULT_AUDIO_VOLUME,
+    onChange: value => IntermissionManager.instance.applyLocalAudioVolume(value)
   });
 
   game.settings.register(MODULE_ID, "reducedMotion", {

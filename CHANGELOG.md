@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.0.7
+
+- Added a per-user intermission sound volume setting (0–100%) and live volume sliders on both the full overlay and minimized pill.
+- Added a persistent GM sound history with the 10 most recently used audio files available directly in the launch window.
+- Audio history is world-scoped, while volume is user-scoped so each participant can keep their own preferred level.
+
+## 1.0.6
+
+- Added an optional per-launch intermission sound picker.
+- Added a **Match sound duration** launch mode that uses the loaded audio file duration as the intermission duration.
+- Added optional sound looping until the intermission ends.
+- Added configurable end fade-out; the sound can fade while mid-track and is forcibly stopped at the effective intermission end.
+- Manual Finish honors the configured audio fade-out when sound is still expected to be playing, without extending beyond an already-earlier scheduled end.
+- Intermission audio is synchronized from the existing `activeSession` world state; reconnecting clients resume from the corresponding playback offset.
+- Existing Foundry playlists are not modified and minimizing the visual overlay does not stop the intermission sound.
+
+## 1.0.5
+
+- Accelerating and linear motion now continues throughout the outgoing crossfade instead of visibly freezing at the slide boundary.
+- Smooth ease-in/ease-out mode keeps its existing behavior and still settles to a stop before the transition.
+- The outgoing background and character animation remains active until its fade-out completes; the incoming slide begins its own motion normally at the same time.
+
 ## 1.0.4
 
 - Added a GM setting for animation pacing.

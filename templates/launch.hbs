@@ -1,17 +1,49 @@
 <div class="fi-launch-body">
-  <div class="form-group fi-launch-row">
-    <label for="fi-duration-mode">{{localize "FOUNDRY_INTERMISSION.Launch.Duration"}}</label>
-    <select id="fi-duration-mode" name="durationMode">
-      {{#each durationOptions}}
-        <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
-      {{/each}}
-    </select>
-  </div>
+  <section class="fi-launch-section">
+    <div class="form-group fi-launch-row">
+      <label for="fi-duration-mode">{{localize "FOUNDRY_INTERMISSION.Launch.Duration"}}</label>
+      <select id="fi-duration-mode" name="durationMode">
+        {{#each durationOptions}}
+          <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+        {{/each}}
+      </select>
+    </div>
 
-  <div class="form-group fi-launch-row">
-    <label for="fi-custom-seconds">{{localize "FOUNDRY_INTERMISSION.Launch.CustomSeconds"}}</label>
-    <input id="fi-custom-seconds" name="customSeconds" type="number" min="10" max="86400" step="10" value="{{settings.defaultDuration}}">
-  </div>
+    <div class="form-group fi-launch-row">
+      <label for="fi-custom-seconds">{{localize "FOUNDRY_INTERMISSION.Launch.CustomSeconds"}}</label>
+      <input id="fi-custom-seconds" name="customSeconds" type="number" min="10" max="86400" step="10" value="{{settings.defaultDuration}}">
+    </div>
+  </section>
+
+  <section class="fi-launch-section fi-launch-audio">
+    <h3><i class="fa-solid fa-volume-high"></i> {{localize "FOUNDRY_INTERMISSION.Launch.AudioSection"}}</h3>
+
+    <div class="fi-launch-audio-path">
+      <label for="fi-audio-src">{{localize "FOUNDRY_INTERMISSION.Launch.AudioFile"}}</label>
+      <div class="fi-path-controls">
+        <input id="fi-audio-src" name="audioSrc" type="text" value="" autocomplete="off" placeholder="sounds/intermission.ogg">
+        <button type="button" data-action="pickSound" title="{{localize 'FOUNDRY_INTERMISSION.Launch.AudioBrowse'}}"><i class="fa-solid fa-folder-open"></i></button>
+      </div>
+    </div>
+
+    {{#if hasAudioHistory}}
+    <div class="fi-launch-audio-history">
+      <span class="fi-launch-audio-history-label">{{localize "FOUNDRY_INTERMISSION.Launch.AudioHistory"}}</span>
+      <div class="fi-launch-audio-history-list">
+        {{#each audioHistory}}
+          <button type="button" data-action="useRecentSound" data-src="{{src}}" title="{{src}}"><i class="fa-solid fa-clock-rotate-left"></i> {{label}}</button>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+
+    <div class="fi-launch-audio-options">
+      <label class="fi-checkbox"><input type="checkbox" name="audioLoop"> {{localize "FOUNDRY_INTERMISSION.Launch.AudioLoop"}}</label>
+      <label class="fi-launch-fade">{{localize "FOUNDRY_INTERMISSION.Launch.AudioFadeOut"}} <input name="audioFadeOut" type="number" min="0" max="3600" step="0.5" value="2"></label>
+    </div>
+
+    <p class="hint fi-launch-audio-hint">{{localize "FOUNDRY_INTERMISSION.Launch.AudioHint"}}</p>
+  </section>
 
   <footer class="fi-launch-footer">
     <button type="submit"><i class="fa-solid fa-play"></i> {{localize "FOUNDRY_INTERMISSION.Launch.Start"}}</button>

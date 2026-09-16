@@ -173,6 +173,42 @@
   background: #161616e8;
 }
 
+.fi-audio-volume {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 8px;
+  border: 1px solid #ffffff40;
+  border-radius: 4px;
+  background: #000000a8;
+  color: #fff;
+  box-shadow: 0 2px 14px #0008;
+  backdrop-filter: blur(3px);
+  font: 600 11px/1 system-ui, sans-serif;
+}
+
+.fi-audio-volume-range {
+  width: 92px;
+  margin: 0;
+}
+
+.fi-audio-volume-value {
+  min-width: 34px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.fi-audio-volume-compact {
+  min-height: 26px;
+  padding: 2px 6px;
+  box-shadow: none;
+}
+
+.fi-audio-volume-compact .fi-audio-volume-range {
+  width: 72px;
+}
+
 .fi-timer {
   position: absolute;
   z-index: 20;
@@ -287,4 +323,80 @@
   display: flex;
   justify-content: flex-end;
   padding-top: 4px;
+}
+
+.fi-launch-section {
+  display: grid;
+  gap: 10px;
+}
+
+.fi-launch-section + .fi-launch-section {
+  border-top: 1px solid var(--color-border-light-2, rgba(255,255,255,0.14));
+  padding-top: 12px;
+}
+
+.fi-launch-section h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.fi-launch-audio-path {
+  display: grid;
+  gap: 6px;
+}
+
+.fi-launch-audio-path > label {
+  font-weight: 600;
+}
+
+
+.fi-launch-audio-history {
+  display: grid;
+  gap: 6px;
+}
+
+.fi-launch-audio-history-label {
+  font-weight: 600;
+}
+
+.fi-launch-audio-history-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 96px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.fi-launch-audio-history-list button {
+  max-width: 100%;
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fi-launch-audio-options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 0.7fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.fi-launch-fade {
+  display: grid;
+  grid-template-columns: 1fr 72px;
+  gap: 8px;
+  align-items: center;
+}
+
+.fi-launch-audio-hint {
+  margin: 0;
+  opacity: 0.8;
+}
+
+@media (max-width: 520px) {
+  .fi-launch-audio-options {
+    grid-template-columns: 1fr;
+  }
 }
