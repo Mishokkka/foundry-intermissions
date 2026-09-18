@@ -101,9 +101,16 @@
   inset: 0;
 }
 
+/* Keep layout isolated from Foundry without introducing an extra paint clip around
+   every animated pair. Firefox/WebRender is noticeably smoother with the transform
+   layers left to the animation engine instead of permanently forced compositor hints. */
+.fi-stage {
+  contain: layout;
+}
+
 .fi-pair {
   opacity: 0;
-  will-change: opacity;
+  transition-property: opacity;
 }
 
 .fi-pair.fi-visible {
@@ -115,7 +122,6 @@
   height: 100%;
   object-fit: cover;
   transform-origin: center center;
-  will-change: transform;
   pointer-events: none;
 }
 
@@ -129,7 +135,6 @@
   bottom: -4vh;
   transform: translateX(-50%);
   transform-origin: 50% 100%;
-  will-change: transform;
 }
 
 .fi-character {
@@ -139,7 +144,6 @@
   object-fit: contain;
   object-position: 50% 100%;
   transform-origin: 50% 100%;
-  will-change: transform;
   pointer-events: none;
 }
 
@@ -165,7 +169,6 @@
   background: #000000a8;
   color: #fff;
   box-shadow: 0 2px 14px #0008;
-  backdrop-filter: blur(3px);
 }
 
 .fi-overlay-controls button:hover,
@@ -184,7 +187,6 @@
   background: #000000a8;
   color: #fff;
   box-shadow: 0 2px 14px #0008;
-  backdrop-filter: blur(3px);
   font: 600 11px/1 system-ui, sans-serif;
 }
 

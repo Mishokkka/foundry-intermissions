@@ -16,6 +16,7 @@ Target environment: Foundry VTT 13.351. Tested architecture is compatible with F
 - Selectable motion pacing: smooth start/stop, accelerating toward the transition, or constant linear speed. Accelerating and linear motion continues through the outgoing crossfade so the old image never visibly freezes before disappearing.
 - Safe background overscan and character boundary clamping.
 - Crossfaded double-buffered visual layers.
+- Cross-browser motion path tuned for Chromium and Firefox/WebRender, including an automatic workaround for Firefox fractional-pixel transform snapping.
 - Lazy image decoding: current and next slides only.
 - Optional timer with selectable corner.
 - Local minimize/restore. A minimized client remains synchronized and jumps to the current slide when restored.

@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.10
+
+- Added an automatic Firefox/WebRender workaround for very slow fractional transforms: motion uses 2D transforms and, on Firefox only, a visually negligible fixed 0.05° rotation to prevent pixel-snapped staircase movement.
+- Removed persistent `will-change` and `backface-visibility` hints from the fullscreen image layers; Web Animations can promote active transforms without keeping large textures permanently forced into compositor layers.
+- Replaced per-pair `contain: layout paint` with layout-only containment on the stage to avoid an extra paint-clipping/compositing boundary around each moving pair.
+- Chrome/Chromium keeps the same visual motion and timing; the Firefox workaround is automatic and requires no user setting.
+
+## 1.0.9
+
+- Reduced unnecessary overlay repaints on slower clients: countdown and minimized-label DOM are now updated only when their displayed value actually changes.
+- Removed live `backdrop-filter` blur from overlay controls and the audio-volume widget because it forces recompositing against the continuously animated background on some browsers/GPUs.
+- Added paint/layout containment and compositor hints to the fullscreen animation layers to improve smoothness on player clients without changing animation timing or synchronization.
+
 ## 1.0.8
 
 - Fixed early manual Finish before `startedAt`: pending intermission audio is now treated as not yet playing, so the normal short stop path cancels delayed playback instead of allowing the sound to start during its own fade-out window.

@@ -19,6 +19,16 @@ const POSITION_RATIOS = {
   right: 0.78
 };
 
+// Firefox 154+ can pixel-snap very slow axis-aligned fractional translations, which
+// makes long pans look like a staircase. A visually negligible fixed rotation keeps
+// the transform non-axis-aligned so WebRender preserves fractional positioning.
+const FIREFOX_SUBPIXEL_ROTATION = /Firefox\//.test(globalThis.navigator?.userAgent ?? "") ? 0.05 : 0;
+
+function motionTransform(x, y, scale) {
+  const rotate = FIREFOX_SUBPIXEL_ROTATION ? ` rotate(${FIREFOX_SUBPIXEL_ROTATION}deg)` : "";
+  return `translate(${x}px, ${y}px) scale(${scale})${rotate}`;
+}
+
 const WORLD_SETTING_KEYS = [
   "characterFolder",
   "characterSource",
@@ -1095,18 +1105,24 @@ class IntermissionManager {
 
     if (this.root?._fiTimer) {
       const timer = this.root._fiTimer;
-      timer.textContent = text;
+      // The lifecycle clock ticks four times per second for responsive endings, but the
+      // visible countdown only changes once per second. Avoid invalidating the overlay
+      // compositor on every lifecycle tick, especially on lower-end player GPUs.
+      if (timer.textContent !== text) timer.textContent = text;
       let visible = false;
       if (remainingMs != null && !this.endingStarted) {
         if (this.session.timerMode === "always") visible = true;
         else if (this.session.timerMode === "last") visible = remainingMs <= (Number(this.session.timerLastSeconds) || 30) * 1000;
       }
-      timer.classList.toggle("fi-timer-visible", visible);
+      if (timer.classList.contains("fi-timer-visible") !== visible) {
+        timer.classList.toggle("fi-timer-visible", visible);
+      }
     }
 
     if (this.pill?._fiLabel) {
       const prefix = this.preview ? localize("Overlay.Preview") : localize("Overlay.Pause");
-      this.pill._fiLabel.textContent = `${prefix} · ${text}`;
+      const label = `${prefix} · ${text}`;
+      if (this.pill._fiLabel.textContent !== label) this.pill._fiLabel.textContent = label;
     }
   }
 
@@ -1308,7 +1324,7 @@ class IntermissionManager {
 
     if (reducedMotion || intensity <= 0) {
       background.style.transform = "scale(1.04)";
-      character.style.transform = "translate3d(0,0,0) scale(1)";
+      character.style.transform = "translate(0, 0) scale(1)";
       return true;
     }
 
@@ -1342,31 +1358,28 @@ class IntermissionManager {
     const panY = viewportHeight * panRatio;
     const minScale = 1 + 2 * panRatio + 0.035;
     const zoom = 0.045 * intensity;
-    const t = (x, y, scale) => `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
-
     switch (motion) {
-      case "pan-right": return [{ transform: t(-panX, 0, minScale) }, { transform: t(panX, 0, minScale + 0.008) }];
-      case "pan-up": return [{ transform: t(0, panY, minScale) }, { transform: t(0, -panY, minScale + 0.008) }];
-      case "pan-down": return [{ transform: t(0, -panY, minScale) }, { transform: t(0, panY, minScale + 0.008) }];
-      case "zoom-in": return [{ transform: t(0, 0, minScale) }, { transform: t(0, 0, minScale + zoom) }];
-      case "zoom-out": return [{ transform: t(0, 0, minScale + zoom) }, { transform: t(0, 0, minScale) }];
-      case "diag-a": return [{ transform: t(panX, panY, minScale) }, { transform: t(-panX, -panY, minScale + 0.01) }];
-      case "diag-b": return [{ transform: t(-panX, panY, minScale) }, { transform: t(panX, -panY, minScale + 0.01) }];
+      case "pan-right": return [{ transform: motionTransform(-panX, 0, minScale) }, { transform: motionTransform(panX, 0, minScale + 0.008) }];
+      case "pan-up": return [{ transform: motionTransform(0, panY, minScale) }, { transform: motionTransform(0, -panY, minScale + 0.008) }];
+      case "pan-down": return [{ transform: motionTransform(0, -panY, minScale) }, { transform: motionTransform(0, panY, minScale + 0.008) }];
+      case "zoom-in": return [{ transform: motionTransform(0, 0, minScale) }, { transform: motionTransform(0, 0, minScale + zoom) }];
+      case "zoom-out": return [{ transform: motionTransform(0, 0, minScale + zoom) }, { transform: motionTransform(0, 0, minScale) }];
+      case "diag-a": return [{ transform: motionTransform(panX, panY, minScale) }, { transform: motionTransform(-panX, -panY, minScale + 0.01) }];
+      case "diag-b": return [{ transform: motionTransform(-panX, panY, minScale) }, { transform: motionTransform(panX, -panY, minScale + 0.01) }];
       case "pan-left":
-      default: return [{ transform: t(panX, 0, minScale) }, { transform: t(-panX, 0, minScale + 0.008) }];
+      default: return [{ transform: motionTransform(panX, 0, minScale) }, { transform: motionTransform(-panX, 0, minScale + 0.008) }];
     }
   }
 
   #characterKeyframes(motion, slidePx, intensity) {
     const zoom = 0.035 * intensity;
-    const t = (x, scale) => `translate3d(${x}px, 0, 0) scale(${scale})`;
     switch (motion) {
-      case "slide-right": return [{ transform: t(-slidePx, 1) }, { transform: t(slidePx, 1 + zoom * 0.2) }];
-      case "zoom-in": return [{ transform: t(0, 1) }, { transform: t(0, 1 + zoom) }];
-      case "zoom-out": return [{ transform: t(0, 1 + zoom) }, { transform: t(0, 1) }];
-      case "still": return [{ transform: t(0, 1) }, { transform: t(0, 1.005) }];
+      case "slide-right": return [{ transform: motionTransform(-slidePx, 0, 1) }, { transform: motionTransform(slidePx, 0, 1 + zoom * 0.2) }];
+      case "zoom-in": return [{ transform: motionTransform(0, 0, 1) }, { transform: motionTransform(0, 0, 1 + zoom) }];
+      case "zoom-out": return [{ transform: motionTransform(0, 0, 1 + zoom) }, { transform: motionTransform(0, 0, 1) }];
+      case "still": return [{ transform: motionTransform(0, 0, 1) }, { transform: motionTransform(0, 0, 1.005) }];
       case "slide-left":
-      default: return [{ transform: t(slidePx, 1) }, { transform: t(-slidePx, 1 + zoom * 0.2) }];
+      default: return [{ transform: motionTransform(slidePx, 0, 1) }, { transform: motionTransform(-slidePx, 0, 1 + zoom * 0.2) }];
     }
   }
 
